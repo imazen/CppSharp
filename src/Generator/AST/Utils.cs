@@ -17,7 +17,7 @@ namespace CppSharp.AST
 
         public static bool CheckIgnoreMethod(Method method)
         {
-            if (method.Ignore) return true;
+            if (method.Ignore && !(method.IsProcessed && method.IsConstructor)) return true;
 
             var isEmptyCtor = method.IsConstructor && method.Parameters.Count == 0;
 
@@ -25,7 +25,7 @@ namespace CppSharp.AST
             if (@class != null && @class.IsValueType && isEmptyCtor)
                 return true;
 
-            if (method.IsCopyConstructor || method.IsMoveConstructor)
+            if (method.IsMoveConstructor)
                 return true;
 
             if (method.IsDestructor)
