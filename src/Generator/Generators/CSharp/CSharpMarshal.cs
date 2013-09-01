@@ -243,6 +243,7 @@ namespace CppSharp.Generators.CSharp
                 }
                 else
                 {
+                    instance = instance.Trim('*');
                     Context.SupportBefore.WriteLine(
                         "CppSharp.Runtime.Helpers.memcpy({0}, new IntPtr(&{1}), new UIntPtr({2}));",
                         instanceName, instance, @class.Layout.Size);
@@ -251,7 +252,8 @@ namespace CppSharp.Generators.CSharp
                 instance = instanceName;
             }
 
-            Context.Return.Write("new {0}({1})", QualifiedIdentifier(@class),
+            Context.Return.Write("new {0}({1})",
+                QualifiedIdentifier(@class) + (@class.IsAbstract ? "Internal" : ""),
                 instance);
 
             return true;

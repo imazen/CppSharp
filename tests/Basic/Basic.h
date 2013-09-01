@@ -49,12 +49,17 @@ enum Enum
 
 class DLL_API Hello
 {
-    union {
+    union NestedPrivate {
         int i;
-        float b;
+        float f;
     };
 
 public:
+    union NestedPublic {
+        int j;
+        float g;
+    };
+
     Hello ();
 
     void PrintHello(const char* s);
@@ -72,6 +77,27 @@ public:
     int AddBar2(Bar2);
 
     int RetEnum(Enum);
+};
+
+class DLL_API AbstractFoo
+{
+public:
+    virtual int pureFunction() = 0;
+};
+
+class DLL_API ImplementsAbstractFoo : public AbstractFoo
+{
+public:
+    virtual int pureFunction();
+};
+
+class DLL_API ReturnsAbstractFoo
+{
+public:
+    const AbstractFoo& getFoo();
+
+private:
+    ImplementsAbstractFoo i;
 };
 
 DLL_API Bar operator-(const Bar &);

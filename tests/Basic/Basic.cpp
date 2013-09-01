@@ -115,3 +115,13 @@ Bar indirectReturn()
 {
     return Bar();
 }
+
+int ImplementsAbstractFoo::pureFunction()
+{
+    return 5;
+}
+
+const AbstractFoo& ReturnsAbstractFoo::getFoo()
+{
+    return i;
+}
