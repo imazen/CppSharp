@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using CppSharp.AST;
+using CppSharp.Types;
 
 #if !OLD_PARSER
 using CppAbi = CppSharp.Parser.AST.CppAbi;
@@ -13,6 +15,7 @@ namespace CppSharp.Passes
     {
         private TranslationUnit currentUnit;
         private readonly List<string> headers = new List<string>();
+        private readonly List<string> templates = new List<string>(); 
         private readonly List<string> mangledInlines = new List<string>(); 
 
         public override bool VisitLibrary(ASTContext context)
@@ -63,6 +66,21 @@ namespace CppSharp.Passes
         {
             currentUnit = unit;
             return base.VisitTranslationUnit(unit);
+        }
+
+        public override bool VisitTemplateSpecializationType(TemplateSpecializationType template, TypeQualifiers quals)
+        {
+            if (AlreadyVisited(template))
+                return false;
+
+            if (template.Arguments.All(a => a.Type.Type != null))
+                templates.Add(new CppTypePrinter(Driver.TypeDatabase).VisitTemplateSpecializationType(template, quals));
+            //if (!currentUnit.FilePath.EndsWith("_impl.h") &&
+            //    !currentUnit.FilePath.EndsWith("_p.h") &&
+            //    !currentUnit.FilePath.EndsWith("_msvc.h") &&
+            //    !headers.Contains(currentUnit.FileName))
+            //    headers.Add(currentUnit.FileName);
+            return base.VisitTemplateSpecializationType(template, quals);
         }
 
         public override bool VisitFunctionDecl(Function function)

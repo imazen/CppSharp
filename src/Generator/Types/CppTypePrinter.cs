@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using CppSharp.AST;
 using Type = CppSharp.AST.Type;
 
@@ -116,8 +117,8 @@ namespace CppSharp.Types
 
         public string VisitTemplateSpecializationType(TemplateSpecializationType template, TypeQualifiers quals)
         {
-            var decl = template.Template.TemplatedDecl;
-            return decl.Visit(this);
+            return string.Format("{0}<{1}>", template.Template.TemplatedDecl.Visit(this),
+                string.Join(", ", template.Arguments.Where(a => !(a.Type.Type is DependentNameType)).Select(a => a.Type.Visit(this))));
         }
 
         public string VisitTemplateParameterType(TemplateParameterType param, TypeQualifiers quals)
