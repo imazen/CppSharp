@@ -33,6 +33,9 @@ namespace CppSharp.Passes
             headers.Sort();
             foreach (var header in headers)
                 cppBuilder.AppendFormat("#include \"{0}\"\n", header);
+            cppBuilder.AppendLine();
+            foreach (var template in templates)
+                cppBuilder.AppendFormat("template class __declspec(dllexport) {0};\n", template);
             var cpp = string.Format("{0}.cpp", Driver.Options.InlinesLibraryName);
             var path = Path.Combine(Driver.Options.OutputDir, cpp);
             File.WriteAllText(path, cppBuilder.ToString());
@@ -73,14 +76,43 @@ namespace CppSharp.Passes
             if (AlreadyVisited(template))
                 return false;
 
-            if (template.Arguments.All(a => a.Type.Type != null))
-                templates.Add(new CppTypePrinter(Driver.TypeDatabase).VisitTemplateSpecializationType(template, quals));
-            //if (!currentUnit.FilePath.EndsWith("_impl.h") &&
-            //    !currentUnit.FilePath.EndsWith("_p.h") &&
-            //    !currentUnit.FilePath.EndsWith("_msvc.h") &&
-            //    !headers.Contains(currentUnit.FileName))
-            //    headers.Add(currentUnit.FileName);
+            if (AreTemplateArgumentsValid(template.Arguments))
+            {
+                string typeString = new CppTypePrinter(Driver.TypeDatabase).VisitTemplateSpecializationType(template, quals);
+                if (!templates.Contains(typeString))
+                {
+                    templates.Add(typeString);
+                    if (!currentUnit.FilePath.EndsWith("_impl.h") &&
+                        !currentUnit.FilePath.EndsWith("_p.h") &&
+                        !headers.Contains(currentUnit.FileName))
+                        headers.Add(currentUnit.FileName);
+                    headers.AddRange(
+                        from argument in template.Arguments
+                        where argument.Declaration != null
+                        let header = argument.Declaration.Namespace.TranslationUnit.FileName
+                        where !headers.Contains(header)
+                        select header);
+                }
+            }
             return base.VisitTemplateSpecializationType(template, quals);
+        }
+
+        private static bool AreTemplateArgumentsValid(IEnumerable<TemplateArgument> templateArguments)
+        {
+            foreach (var templateArgument in templateArguments)
+            {
+                if (templateArgument.Type.Type == null ||
+                    templateArgument.Type.Type is DependentNameType ||
+                    templateArgument.Type.Type is TemplateParameterType ||
+                    (templateArgument.Declaration != null && (templateArgument.Declaration.Ignore ||
+                     templateArgument.Declaration.Access == AccessSpecifier.Private)))
+                    return false;
+                var templateSpecializationType = templateArgument.Type.Type as TemplateSpecializationType;
+                if (templateSpecializationType != null &&
+                    !AreTemplateArgumentsValid(templateSpecializationType.Arguments))
+                    return false;
+            }
+            return true;
         }
 
         public override bool VisitFunctionDecl(Function function)

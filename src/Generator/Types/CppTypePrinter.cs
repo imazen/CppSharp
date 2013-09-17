@@ -117,8 +117,8 @@ namespace CppSharp.Types
 
         public string VisitTemplateSpecializationType(TemplateSpecializationType template, TypeQualifiers quals)
         {
-            return string.Format("{0}<{1}>", template.Template.TemplatedDecl.Visit(this),
-                string.Join(", ", template.Arguments.Where(a => !(a.Type.Type is DependentNameType)).Select(a => a.Type.Visit(this))));
+            return string.Format("{0}<{1}> ", template.Template.TemplatedDecl.Visit(this),
+                string.Join(", ", template.Arguments.Select(a => a.Type.Visit(this))));
         }
 
         public string VisitTemplateParameterType(TemplateParameterType param, TypeQualifiers quals)
